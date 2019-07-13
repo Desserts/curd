@@ -2,6 +2,8 @@ package curd
 
 import (
 	"fmt"
+
+	_ "github.com/go-sql-driver/mysql"
 )
 
 // R 查询语句
