@@ -4,22 +4,22 @@ import (
 	"fmt"
 )
 
-func (d *DB) Select(tableName string, cols []string, ins interface{}, condition map[string]interface{}) error {
-	query := fmt.Sprintf("SELECT %s FROM %s")
+// R 查询语句
+func (d *DB) R(tableName string, cols []string, condition map[string]interface{}, ins interface{}) error {
+	query := fmt.Sprintf("SELECT %s FROM %s", MakeColsParams(cols), SpecialField(tableName))
 	params := make([]interface{}, 0)
 	ph := ""
 	if len(condition) > 0 {
 		ph, params = MakeWhereParams(condition)
 		query += " WHERE " + ph
 	}
-	_, err := d.sqlxDB.Select(ins, query, params...)
-	if err != nil {
-		return err
-	}
+	err := d.Select(ins, query, params...)
+	return err
 }
 
-func (d *DB) SelectPage(tableName string, page, pageSize int, cols []string, ins interface{}, condition map[string]interface{}) error {
-	query := fmt.Sprintf("SELECT %s FROM %s")
+// RPage 分页的查询语句
+func (d *DB) RPage(tableName string, page, pageSize int, cols []string, condition map[string]interface{}, ins interface{}) error {
+	query := fmt.Sprintf("SELECT %s FROM %s", MakeColsParams(cols), SpecialField(tableName))
 	params := make([]interface{}, 0)
 	ph := ""
 	if len(condition) > 0 {
@@ -27,49 +27,51 @@ func (d *DB) SelectPage(tableName string, page, pageSize int, cols []string, ins
 		query += " WHERE " + ph
 	}
 	query += " LIMIT ?, ?"
-	params = append(page-1, pageSize)
-	_, err := d.sqlxDB.Select(ins, query, params...)
-	if err != nil {
-		return err
-	}
+	params = append(params, page-1, pageSize)
+	err := d.Select(ins, query, params...)
+	return err
 }
 
-func (d *DB) Insert(tableName string, data map[string]interface{}) (int, error) {
-	cols, ph, params := MakeWhereParams(data)
-	query := fmt.Sprintf("INSERT INTO %s (%s) VALUES(%s)", tableName, cols, ph)
-	res, err := d.sqlxDB.Exec(query, params)
+// C ...
+func (d *DB) C(tableName string, data map[string]interface{}) (int64, error) {
+	cols, ph, params := MakeInsertParams(data)
+	query := fmt.Sprintf("INSERT INTO %s (%s) VALUES(%s)", SpecialField(tableName), cols, ph)
+	res, err := d.Exec(query, params...)
 	if err != nil {
 		return 0, err
 	}
 	return res.RowsAffected()
 }
 
-func (d *DB) Update(tableName string, data map[string]interface{}) (int, error) {
+// U 更新数据
+func (d *DB) U(tableName string, data map[string]interface{}) (int64, error) {
 	ph, params := MakeWhereParams(data)
-	query := fmt.Sprintf("UPDATE %s SET %s", tableName, ph)
-	res, err := d.sqlxDB.Exec(query, params...)
+	query := fmt.Sprintf("UPDATE %s SET %s", SpecialField(tableName), ph)
+	res, err := d.Exec(query, params...)
 	if err != nil {
 		return 0, err
 	}
 	return res.RowsAffected()
 }
 
-func (d *DB) UpdateWhere(tableName string, data map[string]interface{}, conditon map[string]interface{}) (int, error) {
+// UWhere 带 where 的更新
+func (d *DB) UWhere(tableName string, data map[string]interface{}, condition map[string]interface{}) (int64, error) {
 	ph, params := MakeWhereParams(data)
 	wph, wparams := MakeWhereParams(condition)
-	query := fmt.Sprintf("UPDATE %s SET %s WHERE %s", tableName, ph, wph)
+	query := fmt.Sprintf("UPDATE %s SET %s WHERE %s", SpecialField(tableName), ph, wph)
 	params = append(params, wparams)
-	res, err := d.sqlxDB.Exec(query, params...)
+	res, err := d.Exec(query, params...)
 	if err != nil {
 		return 0, err
 	}
 	return res.RowsAffected()
 }
 
-func (d *DB) Delete(tableName string, data map[string]interface{}) (int, error) {
+// D 删除语句
+func (d *DB) D(tableName string, data map[string]interface{}) (int64, error) {
 	ph, params := MakeWhereParams(data)
-	query := fmt.Sprintf("DELETE FROM %s WHERE %s", tableName, ph)
-	res, err := d.sqlxDB.Exec(query, params...)
+	query := fmt.Sprintf("DELETE FROM %s WHERE %s", SpecialField(tableName), ph)
+	res, err := d.Exec(query, params...)
 	if err != nil {
 		return 0, err
 	}
