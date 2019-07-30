@@ -59,7 +59,7 @@ func (d *DB) UWhere(tableName string, data map[string]interface{}, condition map
 	ph, params := MakeWhereParams(data)
 	wph, wparams := MakeWhereParams(condition)
 	query := fmt.Sprintf("UPDATE %s SET %s WHERE %s", SpecialField(tableName), ph, wph)
-	params = append(params, wparams)
+	params = append(params, wparams...)
 	res, err := d.Exec(query, params...)
 	if err != nil {
 		return 0, err
